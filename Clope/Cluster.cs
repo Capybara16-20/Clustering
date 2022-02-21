@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Clope
 {
@@ -20,7 +19,7 @@ namespace Clope
         /// <summary>
         /// Конструктор, добавляющий первую транзакцию в кластер
         /// </summary>
-        /// <param name="transaction"></param>
+        /// <param name="transaction">Транзакция</param>
         public Cluster(string[] transaction)
         {
             Data = new();
