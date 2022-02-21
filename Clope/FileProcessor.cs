@@ -26,7 +26,7 @@ namespace Clope
 
             string[][] transactions = new string[lines.Length - startLine][];
             for (int i = startLine; i < lines.Length; i++)
-                transactions[i - startLine] = lines[i].Split(elementSeparator);
+                transactions[i - startLine] = lines[i].Split(elementSeparator, StringSplitOptions.RemoveEmptyEntries);
 
             return transactions;
         }
