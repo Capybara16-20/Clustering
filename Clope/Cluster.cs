@@ -17,48 +17,55 @@ namespace Clope
         public int Width { get { return Data.Count; } }
         public double Height { get { return (double)Area / Width; } }
 
+        public Cluster(string[] transaction)
+        {
+            Data = new();
+            Occurrences = new();
+
+            AddTransaction(transaction);
+        }
+
         public void AddTransaction(string[] transaction)
         {
             TransactionsCount++;
-
-            foreach (string existingObject in Data.Intersect(transaction))
-            {
-                int objectIndex = Data.IndexOf(existingObject);
-                Occurrences[objectIndex]++;
-            }
-
-            IEnumerable<string> newObjects = transaction.Except(Data);
-            Occurrences.AddRange(Enumerable.Repeat(startFrequency, newObjects.Count()));
-            Data.AddRange(newObjects);
-
             Area += transaction.Length;
+
+            for (int i = 0; i < transaction.Length; i++)
+            {
+                if (GetOccurrenceFrequency(transaction[i]) == 0)
+                {
+                    Data.Add(transaction[i]);
+                    Occurrences.Add(startFrequency);
+                }
+                else
+                {
+                    int objectIndex = Data.IndexOf(transaction[i]);
+                    Occurrences[objectIndex]++;
+                }
+            }
         }
 
         public void DeleteTransaction(string[] transaction)
         {
-            if (Data.Intersect(transaction).Count() != transaction.Length)
-                throw new ArgumentException(nameof(transaction));
-
             TransactionsCount--;
+            Area -= transaction.Length;
 
-            foreach (string existingObject in transaction)
+            for (int i = 0; i < transaction.Length; i++)
             {
-                int objectIndex = Data.IndexOf(existingObject);
+                int objectIndex = Data.IndexOf(transaction[i]);
                 if (objectIndex < 0)
                     throw new ArgumentException(nameof(transaction));
 
-                if (Occurrences[objectIndex] == startFrequency)
+                if (Occurrences[objectIndex] > startFrequency)
+                {
+                    Occurrences[objectIndex]--;
+                }
+                else
                 {
                     Data.RemoveAt(objectIndex);
                     Occurrences.RemoveAt(objectIndex);
                 }
-                else
-                {
-                    Occurrences[objectIndex]--;
-                }
             }
-
-            Area -= transaction.Length;
         }
 
         public int GetOccurrenceFrequency(string dataObject)
@@ -70,6 +77,11 @@ namespace Clope
             return Occurrences[objectIndex];
         }
 
+        public double GetProfit(double repulsion)
+        {
+            return GetGradient(Area, Width, repulsion) * TransactionsCount;
+        }
+        
         public static double GetProfitFromAdding(Cluster cluster, string[] transaction, double repulsion)
         {
             int newArea = cluster.Area + transaction.Length;
