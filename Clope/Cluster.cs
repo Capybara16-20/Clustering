@@ -100,9 +100,6 @@ namespace Clope
         /// <returns></returns>
         public double GetProfit(double repulsion)
         {
-            if (Width == 0)
-                return 0;
-
             return GetGradient(Area, Width, repulsion) * TransactionsCount;
         }
         
