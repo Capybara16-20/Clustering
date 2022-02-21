@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Clope
 {
@@ -10,9 +11,9 @@ namespace Clope
     public class ClopeProcessor
     {
         public string FileName { get; private set; }
-        private string[][] transactions;
+        private readonly string[][] transactions;
         private List<Cluster> clusters = new();
-        int?[] transactionDistribution;
+        private int[] transactionDistribution;
 
         /// <summary>
         /// Конструктор, вызывающий метод генерации набора транзакций
@@ -27,7 +28,7 @@ namespace Clope
             try
             {
                 transactions = FileProcessor.ReadTransactions(fileName);
-                transactionDistribution = new int?[transactions.Length];
+                transactionDistribution = new int[transactions.Length];
             }
             catch (Exception ex)
             {
@@ -46,7 +47,7 @@ namespace Clope
             try
             {
                 transactions = FileProcessor.ReadTransactions(fileName, isThereHeader);
-                transactionDistribution = new int?[transactions.Length];
+                transactionDistribution = new int[transactions.Length];
             }
             catch (Exception ex)
             {
@@ -59,7 +60,8 @@ namespace Clope
         /// Метод, реализующий алгоритм кластеризации
         /// </summary>
         /// <param name="repulsion">Коэффициент отталкивания</param>
-        public void ClusterData(double repulsion)
+        /// <param name="fileName">Имя файла для записи результата</param>
+        public void ClusterData(double repulsion, string fileName)
         {
             if (repulsion <= 1)
                 throw new ArgumentException(nameof(repulsion));
@@ -70,8 +72,18 @@ namespace Clope
             transactionDistribution[0] = 0;
             for (int i = 1; i < transactions.Length; i++)
             {
+                int clusterIndex = -1;
                 Cluster newCluster = new Cluster(transactions[i]);
-                int clusterIndex = GetClusterIndexToAdd(transactions[i], newCluster, repulsion);
+                double maxProfit = GetProfitFromAddingCluster(newCluster, repulsion) - GetCurrentProfit(repulsion);
+                for (int j = 0; j < clusters.Count; j++)
+                {
+                    double newProfit = Cluster.GetProfitFromAdding(clusters[j], transactions[i], repulsion);
+                    if (newProfit > maxProfit)
+                    {
+                        maxProfit = newProfit;
+                        clusterIndex = j;
+                    }
+                }
 
                 if (clusterIndex < 0)
                 {
@@ -87,18 +99,35 @@ namespace Clope
             #endregion
 
             //Фаза 2 - итерация
+            #region
             int iterationsCount = 0;
+            int changesCount = 0;
             bool isMoved;
             do
             {
+                changesCount = 0;
                 isMoved = false;
 
                 for (int i = 0; i < transactions.Length; i++)
                 {
+                    int currentClusterIndex = transactionDistribution[i];
+                    int clusterIndex = -1;
                     Cluster newCluster = new Cluster(transactions[i]);
-                    int clusterIndex = GetClusterIndexToAdd(transactions[i], newCluster, repulsion);
 
-                    int currentClusterIndex = transactionDistribution[i].Value;
+                    double profitFromRemove = Cluster.GetProfitFromRemoving(clusters[currentClusterIndex], transactions[i], repulsion);
+
+                    double maxProfit = GetProfitFromAddingCluster(newCluster, repulsion) + profitFromRemove - GetCurrentProfit(repulsion);
+                    for (int j = 0; j < clusters.Count; j++)
+                    {
+                        double profitFromAdd = Cluster.GetProfitFromAdding(clusters[j], transactions[i], repulsion);
+                        double newProfit = profitFromAdd + profitFromRemove;
+                        if (newProfit > maxProfit)
+                        {
+                            maxProfit = newProfit;
+                            clusterIndex = j;
+                        }
+                    }
+                    
                     if (currentClusterIndex != clusterIndex)
                     {
                         clusters[currentClusterIndex].DeleteTransaction(transactions[i]);
@@ -117,35 +146,43 @@ namespace Clope
                     }
                 }
 
+                changesCount++;
+
                 iterationsCount++;
             }
             while (isMoved);
 
-            /*ShowResult(repulsion);
-            Console.WriteLine();*/
-            Console.WriteLine("Количество кластеров: {0}", clusters.Count);
-            Console.WriteLine("Количество итераций {0}", iterationsCount);
-            Console.WriteLine("Profit: {0}", GetCurrentProfit(repulsion));
+            RemoveEmptyClusters();
+            #endregion
+
+            ShowResult(repulsion, iterationsCount, fileName);
+            Console.WriteLine();
+            
         }
 
-        private int GetClusterIndexToAdd(string[] transaction, Cluster newCluster, double repulsion)
+        /// <summary>
+        /// Метод удаления пустых кластеров
+        /// </summary>
+        private void RemoveEmptyClusters()
         {
-            int clusterIndex = -1;
-            double maxProfit = GetProfitAfterAddingCluster(newCluster, repulsion) - GetCurrentProfit(repulsion);
-            for (int j = 0; j < clusters.Count; j++)
-            {
-                double newProfit = Cluster.GetProfitFromAdding(clusters[j], transaction, repulsion);
-                if (newProfit > maxProfit)
-                {
-                    maxProfit = newProfit;
-                    clusterIndex = j;
-                }
-            }
+            List<int> indexes = clusters.Select((n, i) => new { Item = n, Index = i })
+                .Where(n => n.Item.TransactionsCount == 0).Select(n => n.Index).ToList();
 
-            return clusterIndex;
+            for (int i = 0; i < transactions.Length; i++)
+                for (int j = 0; j < indexes.Count; j++)
+                    if (transactionDistribution[i] > indexes[j])
+                        transactionDistribution[i]--;
+
+            clusters = clusters.Where(n => n.TransactionsCount > 0).ToList();
         }
 
-        private double GetProfitAfterAddingCluster(Cluster cluster, double repulsion)
+        /// <summary>
+        /// Метод вычисления прироста функции стоимости при добавлении при добавлении нового кластера
+        /// </summary>
+        /// <param name="cluster">Добавляемый кластер</param>
+        /// <param name="repulsion">Коэффициент отталкивания</param>
+        /// <returns></returns>
+        private double GetProfitFromAddingCluster(Cluster cluster, double repulsion)
         {
             double numerator = cluster.GetProfit(repulsion);
             double denominator = cluster.TransactionsCount;
@@ -158,6 +195,11 @@ namespace Clope
             return numerator / denominator;
         }
 
+        /// <summary>
+        /// Метод, вычисляющий текущую функцию стоимости
+        /// </summary>
+        /// <param name="repulsion">Коэффициент отталкивания</param>
+        /// <returns></returns>
         private double GetCurrentProfit(double repulsion)
         {
             double numerator = 0;
@@ -171,36 +213,74 @@ namespace Clope
             return numerator / denominator;
         }
 
-        private void ShowResult(double repulsion)
+        /// <summary>
+        /// Метод вывода результата кластеризации на экран и записи в файл
+        /// </summary>
+        /// <param name="repulsion">Коэффициент отталкивания</param>
+        /// <param name="iterationsCount">Количество выполненных итераций</param>
+        /// <param name="fileName">Имя файла для записи</param>
+        private void ShowResult(double repulsion, int iterationsCount, string fileName)
         {
+            string result = GetResultString(repulsion, iterationsCount);
+            Console.WriteLine(result);
+
+            WriteResult(result, fileName);
+        }
+
+        /// <summary>
+        /// Метод записи результата кластеризации в файл
+        /// </summary>
+        /// <param name="result">Строка результата</param>
+        /// <param name="fileName">Имя файла</param>
+        private static void WriteResult(string result, string fileName)
+        {
+            FileProcessor.WriteToFile(fileName, result);
+        }
+
+        /// <summary>
+        /// Метод получения строки результата
+        /// </summary>
+        /// <param name="repulsion">Коэффициент отталкивания</param>
+        /// <param name="iterationsCount">Количество выполненных итераций</param>
+        /// <returns></returns>
+        private string GetResultString(double repulsion, int iterationsCount)
+        {
+            const string clustersCountPattern = "Количество кластеров: {0}";
+            const string iterationsCountPattern = "Количество итераций: {0}";
+            const string profitPattern = "Profit: {0}";
+            const string clusterPattern = "Кластер {0}:";
+            const string objectPattern = "{0}\t";
+
+            StringBuilder result = new();
+            result.AppendLine(string.Format(clustersCountPattern, clusters.Count));
+            result.AppendLine(string.Format(iterationsCountPattern, iterationsCount));
+            result.AppendLine(string.Format(profitPattern, GetCurrentProfit(repulsion)));
+            result.AppendLine();
+
             for (int i = 0; i < clusters.Count; i++)
             {
-                Console.WriteLine("Кластер {0}:", i + 1);
-                /*Console.WriteLine("|t_i| = {0}", clusters[i].TransactionsCount);
-                Console.WriteLine("S = {0}", clusters[i].Area);
-                Console.WriteLine("W = {0}", clusters[i].Width);
-                Console.WriteLine("Data:");
-                for (int j = 0; j < clusters[i].Data.Count; j++)
-                {
-                    Console.Write("{0}:{1}\t", clusters[i].Data[j], clusters[i].Occurrences[j]);
-                }
-                Console.WriteLine();*/
+                result.AppendLine(string.Format(clusterPattern, i + 1));
+                result.AppendLine(string.Format(profitPattern, clusters[i].GetProfit(repulsion)));
 
-                Console.WriteLine("Profit: {0}", clusters[i].GetProfit(repulsion));
-                for (int j = 0; j < transactions.Length; j++)
+                IEnumerable<string[]> clusterTransactions = transactions
+                    .Select((n, j) => new { Item = n, Index = j })
+                    .Where(n => transactionDistribution[n.Index] == i).Select(n => n.Item);
+
+                StringBuilder transactionString = new();
+                foreach (string[] transaction in clusterTransactions)
                 {
-                    if (transactionDistribution[j] == i)
+                    for (int j = 0; j < transaction.Length; j++)
                     {
-                        Console.Write("[{0}]\t", j + 1);
-                        for (int k = 0; k < transactions[j].Length; k++)
-                        {
-                            Console.Write("{0}\t", transactions[j][k]);
-                        }
-                        Console.WriteLine();
+                        transactionString.Append(string.Format(objectPattern, transaction[j]));
                     }
+                    transactionString.AppendLine();
                 }
-                Console.WriteLine();
+
+                result.Append(transactionString);
+                result.AppendLine();
             }
+
+            return result.ToString();
         }
     }
 }
