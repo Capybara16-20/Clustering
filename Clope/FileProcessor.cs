@@ -3,23 +3,30 @@ using System.IO;
 
 namespace Clope
 {
+    /// <summary>
+    /// Класс для работы с файлами
+    /// </summary>
     static class FileProcessor
     {
         const string fileNotFoundErrorMessage = "Файл не найден.";
+        const string invalidSetErrorMessage = "Некорректный набор данных.";
 
-        public static string[][] ReadTransactions(string fileName)
+        public static string[][] ReadTransactions(string fileName, bool isThereHeader = false)
         {
             const char elementSeparator = '\t';
+            int startLine = isThereHeader ? 1 : 0;
 
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
             if (filePath == null)
                 throw new ArgumentNullException(nameof(filePath));
 
             string[] lines = ReadLines(filePath);
+            if (lines.Length < 2)
+                throw new ArgumentException(invalidSetErrorMessage);
 
-            string[][] transactions = null;
-
-            throw new NotImplementedException();
+            string[][] transactions = new string[lines.Length - startLine][];
+            for (int i = startLine; i < lines.Length; i++)
+                transactions[i - startLine] = lines[i].Split(elementSeparator);
 
             return transactions;
         }
