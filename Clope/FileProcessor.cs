@@ -11,6 +11,12 @@ namespace Clope
         const string fileNotFoundErrorMessage = "Файл не найден.";
         const string invalidSetErrorMessage = "Некорректный набор данных.";
 
+        /// <summary>
+        /// Метод для считывания набора данных из файла
+        /// </summary>
+        /// <param name="fileName">Имя файла</param>
+        /// <param name="isThereHeader">Есть ли заголовок</param>
+        /// <returns></returns>
         public static string[][] ReadTransactions(string fileName, bool isThereHeader = false)
         {
             const char elementSeparator = '\t';
@@ -31,6 +37,11 @@ namespace Clope
             return transactions;
         }
 
+        /// <summary>
+        /// Метод считывания строк из файла
+        /// </summary>
+        /// <param name="filePath">Путь к файлу</param>
+        /// <returns></returns>
         private static string[] ReadLines(string filePath)
         {
             string[] lines;
@@ -42,6 +53,11 @@ namespace Clope
             return lines;
         }
 
+        /// <summary>
+        /// Метод записи строки в файл
+        /// </summary>
+        /// <param name="fileName">Имя файла</param>
+        /// <param name="line">Строка для записи</param>
         public static void WriteToFile(string fileName, string line)
         {
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
