@@ -151,7 +151,6 @@ namespace Clope
             #endregion
 
             ShowResult(repulsion, iterationsCount, fileName);
-            Console.WriteLine();
         }
 
         /// <summary>
