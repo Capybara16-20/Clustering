@@ -13,7 +13,7 @@ namespace Clope
         public string FileName { get; private set; }
         private readonly string[][] transactions;
         private List<Cluster> clusters = new();
-        private int[] transactionDistribution;
+        private readonly int[] transactionDistribution;
 
         /// <summary>
         /// Конструктор, вызывающий метод генерации набора транзакций
@@ -101,11 +101,9 @@ namespace Clope
             //Фаза 2 - итерация
             #region
             int iterationsCount = 0;
-            int changesCount = 0;
             bool isMoved;
             do
             {
-                changesCount = 0;
                 isMoved = false;
 
                 for (int i = 0; i < transactions.Length; i++)
@@ -115,7 +113,6 @@ namespace Clope
                     Cluster newCluster = new Cluster(transactions[i]);
 
                     double profitFromRemove = Cluster.GetProfitFromRemoving(clusters[currentClusterIndex], transactions[i], repulsion);
-
                     double maxProfit = GetProfitFromAddingCluster(newCluster, repulsion) + profitFromRemove - GetCurrentProfit(repulsion);
                     for (int j = 0; j < clusters.Count; j++)
                     {
@@ -145,8 +142,6 @@ namespace Clope
                         isMoved = true;
                     }
                 }
-
-                changesCount++;
 
                 iterationsCount++;
             }
