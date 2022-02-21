@@ -152,7 +152,6 @@ namespace Clope
 
             ShowResult(repulsion, iterationsCount, fileName);
             Console.WriteLine();
-            
         }
 
         /// <summary>
@@ -240,6 +239,8 @@ namespace Clope
         /// <returns></returns>
         private string GetResultString(double repulsion, int iterationsCount)
         {
+            const string transactionsCountPattern = "Количество транзакций: {0}";
+            const string repulsionPattern = "Коэффициент отталкивания: {0}";
             const string clustersCountPattern = "Количество кластеров: {0}";
             const string iterationsCountPattern = "Количество итераций: {0}";
             const string profitPattern = "Profit: {0}";
@@ -247,6 +248,8 @@ namespace Clope
             const string objectPattern = "{0}\t";
 
             StringBuilder result = new();
+            result.AppendLine(string.Format(transactionsCountPattern, transactions.Length));
+            result.AppendLine(string.Format(repulsionPattern, repulsion));
             result.AppendLine(string.Format(clustersCountPattern, clusters.Count));
             result.AppendLine(string.Format(iterationsCountPattern, iterationsCount));
             result.AppendLine(string.Format(profitPattern, GetCurrentProfit(repulsion)));

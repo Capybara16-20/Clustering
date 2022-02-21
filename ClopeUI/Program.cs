@@ -7,24 +7,25 @@ namespace ClopeUI
     {
         static void Main(string[] args)
         {
-            /*const string fileName = "transactions.txt";
+            const string fileName = "transactions.txt";
             const string resultFileName = "result.txt";
-            const int transactionsCount = 100;
+            const int transactionsCount = 1000;
             const int minTransactionLength = 4;
             const int maxTransactionLength = 7;
-            const double repulsion = 3;
+            const double repulsion = 5;
 
             try
             {
-                ClopeProcessor processor = new ClopeProcessor(transactionsCount, minTransactionLength, maxTransactionLength, fileName);
+                ClopeProcessor processor = new ClopeProcessor(transactionsCount, 
+                    minTransactionLength, maxTransactionLength, fileName);
                 processor.ClusterData(repulsion, resultFileName);
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-            }*/
+            }
 
-            const string fileName = "Чеки.txt";
+            /*const string fileName = "Чеки.txt";
             const string resultFileName = "result.txt";
             const bool isThereHeader = true;
             const double repulsion = 2;
@@ -36,7 +37,7 @@ namespace ClopeUI
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-            }
+            }*/
         }
     }
 }
