@@ -1,26 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Clope
 {
-    /// <summary>
-    /// Класс для работы с файлами
-    /// </summary>
-    static class FileProcessor
+    public class FileProcessor
     {
         const string fileNotFoundErrorMessage = "Файл не найден.";
         const string invalidSetErrorMessage = "Некорректный набор данных.";
 
-        /// <summary>
-        /// Метод для считывания набора данных из файла
-        /// </summary>
-        /// <param name="fileName">Имя файла</param>
-        /// <param name="isThereHeader">Есть ли заголовок</param>
-        /// <returns></returns>
-        public static string[][] ReadTransactions(string fileName, bool isThereHeader = false)
+        public static Dictionary<string, string[]> ReadTransactions(string fileName, char separator, out int linesCount, bool isThereHeader = false)
         {
-            const char elementSeparator = '\t';
             int startLine = isThereHeader ? 1 : 0;
+
+            Dictionary<string, string[]> data = new Dictionary<string, string[]>();
 
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
             if (filePath == null)
@@ -30,18 +24,32 @@ namespace Clope
             if (lines.Length < 2)
                 throw new ArgumentException(invalidSetErrorMessage);
 
-            string[][] transactions = new string[lines.Length - startLine][];
+            linesCount = lines.Length - startLine;
             for (int i = startLine; i < lines.Length; i++)
-                transactions[i - startLine] = lines[i].Split(elementSeparator, StringSplitOptions.RemoveEmptyEntries);
+            {
+                string[] lineParts = lines[i].Split(separator, StringSplitOptions.RemoveEmptyEntries);
 
-            return transactions;
+                if (lineParts.Length != 2)
+                    throw new ArgumentException(invalidSetErrorMessage);
+
+                string name = lineParts[0];
+                string element = lineParts[1];
+
+                if (data.ContainsKey(name))
+                {
+                    List<string> objects = data[name].ToList();
+                    objects.Add(element);
+                    data[name] = objects.ToArray();
+                }
+                else
+                {
+                    data.Add(name, new string[] { element });
+                }
+            }
+
+            return data;
         }
 
-        /// <summary>
-        /// Метод считывания строк из файла
-        /// </summary>
-        /// <param name="filePath">Путь к файлу</param>
-        /// <returns></returns>
         private static string[] ReadLines(string filePath)
         {
             string[] lines;
@@ -53,22 +61,12 @@ namespace Clope
             return lines;
         }
 
-        /// <summary>
-        /// Метод записи строки в файл
-        /// </summary>
-        /// <param name="fileName">Имя файла</param>
-        /// <param name="line">Строка для записи</param>
-        public static void WriteToFile(string fileName, string line)
+        public static void WriteResult(string filePath, string result)
         {
-            string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
-
-            if (filePath == null)
-                throw new ArgumentNullException(nameof(filePath));
-
-            FileStream file = new(filePath, FileMode.Create);
-            using (StreamWriter sw = new(file))
+            FileStream file = new FileStream(filePath, FileMode.Create);
+            using (StreamWriter sw = new StreamWriter(file))
             {
-                sw.WriteLine(line);
+                sw.WriteLine(result);
             }
         }
     }

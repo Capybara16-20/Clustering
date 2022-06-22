@@ -1,43 +1,23 @@
-﻿using System;
-using Clope;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
-namespace ClopeUI
+namespace ClusteringUI
 {
-    class Program
+    static class Program
     {
-        static void Main(string[] args)
+        /// <summary>
+        ///  The main entry point for the application.
+        /// </summary>
+        [STAThread]
+        static void Main()
         {
-            const string fileName = "transactions.txt";
-            const string resultFileName = "result.txt";
-            const int transactionsCount = 1000;
-            const int minTransactionLength = 4;
-            const int maxTransactionLength = 7;
-            const double repulsion = 5;
-
-            try
-            {
-                ClopeProcessor processor = new ClopeProcessor(transactionsCount, 
-                    minTransactionLength, maxTransactionLength, fileName);
-                processor.ClusterData(repulsion, resultFileName);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-
-            /*const string fileName = "Чеки.txt";
-            const string resultFileName = "result.txt";
-            const bool isThereHeader = true;
-            const double repulsion = 2;
-            try
-            {
-                ClopeProcessor processor = new ClopeProcessor(fileName, isThereHeader);
-                processor.ClusterData(repulsion, resultFileName);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }*/
+            Application.SetHighDpiMode(HighDpiMode.SystemAware);
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new Form());
         }
     }
 }
